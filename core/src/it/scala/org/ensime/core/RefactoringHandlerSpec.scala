@@ -45,6 +45,31 @@ class RefactoringHandlerSpec extends WordSpec with Matchers
       assert(fileContents === expectedContents)
     }
 
+    "add imports on the first line" in withAnalyzer { (dir, analyzerRef) =>
+      val file = srcFile(dir, "tmp-contents", contents(
+        "import scala.collection.mutable.Set"
+      ), write = true, encoding = encoding)
+
+      val analyzer = analyzerRef.underlyingActor
+
+      val procId = 1
+      analyzer.handleRefactorPrepareRequest(
+        new PrepareRefactorReq(
+          procId, 'Ignored, AddImportRefactorDesc("javax.swing.JPanel", new File(file.path)), false
+        )
+      )
+      analyzer.handleRefactorExec(
+        new ExecRefactorReq(procId, RefactorType.AddImport)
+      )
+
+      val formatted = readSrcFile(file, encoding)
+      val expectedContents = contents(
+        "import javax.swing.JPanel",
+        "import scala.collection.mutable.Set"
+      )
+      assert(formatted === expectedContents)
+    }
+
     "format files from ContentsSourceFileInfo with handleFormatFile" in withAnalyzer { (dir, analyzerRef) =>
       val content = contents(
         "package blah",
